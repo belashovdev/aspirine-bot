@@ -4,7 +4,7 @@ from aiogram.types import ReplyKeyboardRemove
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 
-from loader import dp
+from loader import dp, db
 from states import Order
 from keyboards.default import menu
 
@@ -21,13 +21,14 @@ async def order(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Order.Order1)
 async def answer_order(message: types.Message, state: FSMContext):
-    answer = message.text
-    await state.update_data(Order1 = answer)
+    contact = message.text
+    await db.add_user(message.from_user.id, contact, contact)
+    user = await db.select_user(id=message.from_user.id)
     
-    await message.answer(f"Ваши данные: {answer}\n"
+    await message.answer(f"Ваши данные: {contact}\n"
                          f"Спасибо, мы очень скоро вам перезвоним!\n", reply_markup=menu)
 
-    await state.reset_state()
+    await state.finish()
 
 
 
