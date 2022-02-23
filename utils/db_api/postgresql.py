@@ -1,92 +1,132 @@
-from typing import Union
-from inspect import Parameter
-import asyncpg
-from asyncpg import Pool
+from datetime import datetime
+from typing import Text
+from aiogram import types, Bot
+from gino import Gino
+from gino.schema import GinoSchemaVisitor
+from sqlalchemy import (Column, Integer, BigInteger, String,
+                        Sequence, TIMESTAMP, Boolean, JSON, Text)
+from sqlalchemy import sql
 
 from data import config
 
-class Database:
-    def __init__(self):
-       self.pool: Union[Pool, None] = None
-    
-    async def create(self):
-        pool = await asyncpg.create_pool(
-            user=config.PGUSER,
-            password=config.PGPASSWORD,
-            host=config.IP,
-            database=config.DATABASE
-        )
-        self.pool=pool
-       
-    async def create_table_users(self):
-        sql = """
-        CREATE TABLE IF NOT EXISTS users(
-        id INT NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        contact VARCHAR(255),
-        ref VARCHAR(255),
-        PRIMARY KEY (id)
-        )
-        """
-        await self.pool.execute(sql)
+db = Gino()
 
-    async def create_table_pricelist(self):
-        sql = """
-        CREATE TABLE IF NOT EXISTS pricelist(
-        id INT NOT NULL,
-        pricelist TEXT NOT NULL,
-        date VARCHAR(255),
-        PRIMARY KEY (id)
-        )
-        """
-        await self.pool.execute(sql)
 
-    @staticmethod
-    def format_args(sql, parameters: dict):
-        sql += " AND ".join([
-            f"{item} = ${num}" for num, item in enumerate(parameters, start=1)
+# Документация
+# http://gino.fantix.pro/en/latest/tutorials/tutorial.html
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    user_id = Column(BigInteger)
+    username = Column(String(50))
+    referral = Column(Integer)
+    query: sql.Select
+
+    def __repr__(self):
+        return "<User(id='{}', username='{}',referral='{}')>".format(
+            self.id, self.username, self.referral)
+
+
+class Page(db.Model):
+    __tablename__ = 'page'
+    query: sql.Select
+
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    key = Column(String(250))
+    text = Column(Text())
+
+    def __repr__(self):
+        return "<Page(id='{}', text='{}', date='{}', key='{}')>".format(
+            self.id, self.text, self.date, self.key)
+
+
+class Order(db.Model):
+    __tablename__ = 'order'
+    query: sql.Select
+
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    user_id = Column(BigInteger)
+    referral = Column(Integer)
+    contact = Column(String(250))
+    date = Column(String(250))
+
+    def __repr__(self):
+        return "<Order(id='{}', user_id='{}', contact='{}', date='{}', referral='{}')>".format(
+            self.id, self.user_id, self.contact, self.date, self.referral)
+
+
+
+class DBCommands:
+
+    async def get_user(self, user_id):
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        return user
+
+    async def add_new_user(self, referral=None):
+        user = types.User.get_current()
+        old_user = await self.get_user(user.id)
+        if old_user:
+            return old_user
+        new_user = User()
+        new_user.user_id = user.id
+        new_user.username = user.username
+
+        if referral:
+            new_user.referral = int(referral)
+        await new_user.create()
+        return new_user
+
+    async def count_users(self) -> int:
+        total = await db.func.count(User.id).gino.scalar()
+        return total
+
+    async def check_referrals(self):
+        bot = Bot.get_current()
+        user_id = types.User.get_current().id
+
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        referrals = await User.query.where(User.referral == user.id).gino.all()
+
+        return ", ".join([
+            f"{num + 1}. " + (await bot.get_chat(referral.user_id)).get_mention(as_html=True)
+            for num, referral in enumerate(referrals)
         ])
-        return sql, tuple(parameters.values())
-
-    async def add_user(self, id: int, name: str, contact: str = None):
-        sql = "INSERT INTO users (id, name, contact) VALUES ($1, $2, $3)"
-        await self.pool.execute(sql, id, name, contact)
-
-    async def select_all_users(self):
-        sql = "SELECT * FROM users"
-        return await self.pool.fetch(sql)
-
-    async def select_user (self, **kwargs):
-        sql = "SELECT * FROM users WHERE "
-        sql, parameters = self.format_args(sql, kwargs)
-        return await self.pool.fetchrow(sql, *parameters)
-
-    async def count_users(self):
-        return await self.pool.fetchval("SELECT COUNT(*) FROM users")
-
-    async def update_user_contact(self, contact, id):
-        sql = "UPDATE users SET contact = $1 WHERE id = $2"
-        return await self.pool.execute (sql, contact, id)
-
-    async def delete_users(self):
-        await self.pool.execute("DELETE FROM users WHERE True")
 
 
-    # Методы для работы с прайслистом
-    async def add_pricelist(self, pricelist: str, date: str):
-        sql = "INSERT INTO pricelist (id, pricelist, date) VALUES (1, $1, $2)"
-        return await self.pool.execute(sql, pricelist, date)
+    async def add_new_order(self, contact):
+        new_order = Order()
+        new_order.user_id = types.User.get_current()  
+        #new_order.referral = referral
+        new_order.contact = contact
+        
+        dt = datetime.now()
+        new_order.date = dt.strftime('%m.%d.%Y')
+        await new_order.create()
+        return new_order
 
-    async def select_last_pricelist (self):
-        sql = "SELECT * FROM pricelist"
-        return await self.pool.fetch(sql)
 
-    async def update_pricelist(self):
-        last_pricelist_id = await self.select_last_pricelist()
-        print(last_pricelist_id)
-        #sql = "UPDATE pricelist SET pricelist = $1, date = $2 WHERE id = $3"
-        #return await self.pool.execute (sql, pricelist, date, last_pricelist_id)
+    async def add_new_page(self, key, text):
+        new_page = Page()
+        new_page.key = key
+        new_page.text = text
 
-    
-    
-    
+        await new_page.create()
+        return new_page
+
+    async def get_page(self, keyword):
+        page = await Page.query.where(Page.key == keyword).gino.first()
+        return page
+
+async def create_db():
+    await db.set_bind(f'postgresql://{config.PGUSER}:{config.PGPASSWORD}@{config.IP}/gino')
+
+    # Create tables
+    await db.gino.drop_all()
+    await db.gino.create_all()
+    await DBCommands.add_new_page("", "pricelist", "Страница с актуальным прайс листом")
+    await DBCommands.add_new_page("", "delivery", "Страница с доставка и оплата")
+    await DBCommands.add_new_page("", "contact", "Актуальные контакты")
+
+

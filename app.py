@@ -1,13 +1,14 @@
 from aiogram import executor
 
-from loader import dp, db
+from loader import dp, create_db
 import middlewares, filters, handlers
 from utils.notify_admins import on_startup_notify
 from utils.set_bot_commands import set_default_commands
 
 
 async def on_startup(dispatcher):
-    await db.create()
+    # Создаем базу данных
+    await create_db()
 
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)
