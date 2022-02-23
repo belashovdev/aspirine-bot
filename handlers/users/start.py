@@ -13,7 +13,7 @@ async def register_user(message: types.Message):
     referral = message.get_args()
     user = await db.add_new_user(referral=referral)
     # id = user.id
-
+   
     await message.answer(f"Привет, {message.from_user.full_name}!", reply_markup=menu)
 
 

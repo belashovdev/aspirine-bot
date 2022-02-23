@@ -7,9 +7,9 @@ admin_menu = ReplyKeyboardMarkup(
             KeyboardButton(text="📨 Рассылка"),
         ],
         [   
-            KeyboardButton(text="📄 Прайс-лист"),
-            KeyboardButton(text="🚛 Доставка и оплата"),
-            KeyboardButton(text="📞 Контакты"),
+            KeyboardButton(text="📄 ред. прайс-лист"),
+            KeyboardButton(text="🚛 ред. доставка и оплата"),
+            KeyboardButton(text="📞 ред. контакты"),
         ],
         [
             KeyboardButton(text="⬅️ Главное меню"),
@@ -18,3 +18,11 @@ admin_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+go_to_admin = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text="⬅️ Отмена"),
+        ],
+    ],
+    resize_keyboard=True
+)

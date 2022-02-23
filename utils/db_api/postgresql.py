@@ -64,6 +64,10 @@ class DBCommands:
         user = await User.query.where(User.user_id == user_id).gino.first()
         return user
 
+    async def get_all_users(self):
+        users = await User.query.gino.all()
+        return users
+
     async def add_new_user(self, referral=None):
         user = types.User.get_current()
         old_user = await self.get_user(user.id)
@@ -120,6 +124,10 @@ class DBCommands:
 
     async def get_page(self, keyword):
         page = await Page.query.where(Page.key == keyword).gino.first()
+        return page
+
+    async def update_page (self, keyword, text):
+        page = await Page.update.values(text=text).where(Page.key == keyword).gino.status()
         return page
 
 
