@@ -106,6 +106,9 @@ class DBCommands:
         await new_order.create()
         return new_order
 
+    async def get_orders(self):
+        orders = await Order.query.limit(20).order_by(Order.id.desc()).gino.all()
+        return orders
 
     async def add_new_page(self, key, text):
         new_page = Page()
@@ -118,6 +121,8 @@ class DBCommands:
     async def get_page(self, keyword):
         page = await Page.query.where(Page.key == keyword).gino.first()
         return page
+
+
 
 async def create_db():
     await db.set_bind(f'postgresql://{config.PGUSER}:{config.PGPASSWORD}@{config.IP}/gino')

@@ -6,7 +6,7 @@ from loader import dp, db
 from keyboards.default import menu
 
 
-
+@dp.message_handler(text="⬅️ Главное меню")
 @dp.message_handler(CommandStart())
 async def register_user(message: types.Message):
     chat_id = message.from_user.id
@@ -15,4 +15,6 @@ async def register_user(message: types.Message):
     # id = user.id
 
     await message.answer(f"Привет, {message.from_user.full_name}!", reply_markup=menu)
+
+
 
