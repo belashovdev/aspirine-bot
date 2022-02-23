@@ -9,7 +9,7 @@ from keyboards.default import menu, go_back
 from utils.notify_admins import order_notify
 
 @dp.message_handler(text="📨 Оставить заявку")
-@dp.message_handler(Command("order"))
+@dp.message_handler(commands=['order'])
 async def order(message: types.Message, state: FSMContext):
     await state.reset_state()
     await message.answer(f"*Оставить заявку*\n\n"

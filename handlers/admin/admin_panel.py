@@ -13,7 +13,10 @@ from keyboards.default import menu, admin_menu, go_to_admin
 @dp.message_handler(user_id=config.ADMINS, text="⚙️ Админка")
 @dp.message_handler(user_id=config.ADMINS, commands=['admin'])
 async def admin_panel(message: types.Message):
-    await message.answer("Панель администратора", reply_markup=admin_menu)
+    count_users = await db.count_users()
+    await message.answer(f"⚙️ Панель администратора \n\n"
+                         f"Всего пользователей в боте: {count_users} \n"
+                         f"Поздравляю, вы охуенны.", reply_markup=admin_menu)
 
 # Хендлеры работы с заявками
 @dp.message_handler(user_id=config.ADMINS, text="💌 Заявки")

@@ -8,6 +8,6 @@ async def set_default_commands(dp):
             types.BotCommand("price", "Прайс-лист"),
             types.BotCommand("contact", "Контакты"),
             types.BotCommand("order", "Оставить заявку"),
-            types.BotCommand("help", "Справка"),
+            types.BotCommand("delivery", "Доставка и оплата"),
         ]
     )
