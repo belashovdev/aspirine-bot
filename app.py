@@ -1,3 +1,5 @@
+import asyncio
+from re import A
 from aiogram import executor
 
 from loader import dp, create_db
@@ -7,7 +9,6 @@ from utils.set_bot_commands import set_default_commands
 
 
 async def on_startup(dispatcher):
-    # Создаем базу данных
     await create_db()
 
     # Устанавливаем дефолтные команды

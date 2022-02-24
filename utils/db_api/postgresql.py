@@ -114,17 +114,19 @@ class DBCommands:
         orders = await Order.query.limit(20).order_by(Order.id.desc()).gino.all()
         return orders
 
+
+
+    async def get_page(self, keyword):
+        page = await Page.query.where(Page.key == keyword).gino.first()
+        return page
+
     async def add_new_page(self, key, text):
         new_page = Page()
         new_page.key = key
         new_page.text = text
 
         await new_page.create()
-        return new_page
-
-    async def get_page(self, keyword):
-        page = await Page.query.where(Page.key == keyword).gino.first()
-        return page
+        return new_page   
 
     async def update_page (self, keyword, text):
         page = await Page.update.values(text=text).where(Page.key == keyword).gino.status()
@@ -136,30 +138,8 @@ async def create_db():
     await db.set_bind(f'postgresql://{config.PGUSER}:{config.PGPASSWORD}@{config.IP}/gino')
 
     # Create tables
-    await db.gino.drop_all()
     await db.gino.create_all()
 
-    contacts = """
-📞 *Контакты для связи* 
-
-*Менеджер в тг:* @chernyshev148
-*Номер:* +7 (995) 675-75-50
-*Официальная страница тг:* @aspirineasic
-*Сайт:* [aspirine-ekaterinburg.ru](https://aspirine-ekaterinburg.ru) 
-"""
-    delivery = """
-✈️ *Доставка и оплата* 
-К оплате доступны следующие способы:
-Наличные, перевод на карту, криптой (USDT)
-
-Доставка осуществляется по всему СНГ.
-Подробнее про доставку в ваш регион можно спросить у нашего менеджера (раздел "Контакты")
-
-
-"""
-
-    await DBCommands.add_new_page("", "pricelist", "Страница с актуальным прайс листом")
-    await DBCommands.add_new_page("", "delivery", delivery)
-    await DBCommands.add_new_page("", "contact", contacts)
+    
 
 
